@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from database import get_db
 from models import Village, Alert, TankerAssignment, Tanker
@@ -13,6 +13,7 @@ class VillageResponse(BaseModel):
     id: int
     name: str
     district: str
+    region: str
     latitude: float
     longitude: float
     population: int
@@ -31,9 +32,39 @@ class VillageResponse(BaseModel):
 class UpdateWaterRequest(BaseModel):
     days_without_water: int
 
+@router.get("/regions")
+def get_regions(db: Session = Depends(get_db)):
+    marathwada_count = db.query(Village).filter(Village.region == "marathwada").count()
+    nagpur_count = db.query(Village).filter(Village.region == "nagpur").count()
+    
+    return [
+        {
+            "id": "marathwada",
+            "name": "Marathwada Region",
+            "districts": ["Latur", "Osmanabad", "Beed", "Nanded", "Parbhani"],
+            "center_lat": 18.0,
+            "center_lng": 76.5,
+            "zoom": 8,
+            "village_count": marathwada_count
+        },
+        {
+            "id": "nagpur",
+            "name": "Nagpur District",
+            "districts": ["Nagpur"],
+            "center_lat": 21.1458,
+            "center_lng": 79.0882,
+            "zoom": 10,
+            "village_count": nagpur_count
+        }
+    ]
+
 @router.get("/all-with-status")
-def get_villages_with_status(db: Session = Depends(get_db)):
-    villages = db.query(Village).all()
+def get_villages_with_status(region: Optional[str] = Query(None), db: Session = Depends(get_db)):
+    query = db.query(Village)
+    if region:
+        query = query.filter(Village.region == region)
+    
+    villages = query.all()
     assignments = db.query(TankerAssignment).filter(
         TankerAssignment.status.in_(["pending", "in_transit"])
     ).all()
@@ -55,6 +86,7 @@ def get_villages_with_status(db: Session = Depends(get_db)):
             "id": village.id,
             "name": village.name,
             "district": village.district,
+            "region": village.region,
             "latitude": village.latitude,
             "longitude": village.longitude,
             "population": village.population,
@@ -73,8 +105,12 @@ def get_villages_with_status(db: Session = Depends(get_db)):
     return result
 
 @router.get("/", response_model=List[VillageResponse])
-def get_villages(db: Session = Depends(get_db)):
-    villages = db.query(Village).all()
+def get_villages(region: Optional[str] = Query(None), db: Session = Depends(get_db)):
+    query = db.query(Village)
+    if region:
+        query = query.filter(Village.region == region)
+    
+    villages = query.all()
     for village in villages:
         wsi, stress_level = calculate_wsi(village)
         village.water_stress_index = wsi
@@ -83,8 +119,12 @@ def get_villages(db: Session = Depends(get_db)):
     return villages
 
 @router.get("/critical", response_model=List[VillageResponse])
-def get_critical_villages(db: Session = Depends(get_db)):
-    villages = db.query(Village).all()
+def get_critical_villages(region: Optional[str] = Query(None), db: Session = Depends(get_db)):
+    query = db.query(Village)
+    if region:
+        query = query.filter(Village.region == region)
+    
+    villages = query.all()
     for village in villages:
         wsi, stress_level = calculate_wsi(village)
         village.water_stress_index = wsi
@@ -95,8 +135,12 @@ def get_critical_villages(db: Session = Depends(get_db)):
     return sorted(critical_villages, key=lambda v: v.water_stress_index, reverse=True)
 
 @router.get("/stats")
-def get_village_stats(db: Session = Depends(get_db)):
-    villages = db.query(Village).all()
+def get_village_stats(region: Optional[str] = Query(None), db: Session = Depends(get_db)):
+    query = db.query(Village)
+    if region:
+        query = query.filter(Village.region == region)
+    
+    villages = query.all()
     
     for village in villages:
         wsi, stress_level = calculate_wsi(village)

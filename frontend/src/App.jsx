@@ -4,6 +4,7 @@ import DriverView from './pages/DriverView'
 import SarpanchView from './pages/SarpanchView'
 import Analytics from './pages/Analytics'
 import NotFound from './pages/NotFound'
+import { RegionProvider } from './context/RegionContext'
 import { Map, Truck, Home, BarChart3 } from 'lucide-react'
 
 function BottomNav() {
@@ -47,16 +48,18 @@ function BottomNav() {
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50">
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/driver" element={<DriverView />} />
-          <Route path="/sarpanch" element={<SarpanchView />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <BottomNav />
-      </div>
+      <RegionProvider>
+        <div className="min-h-screen bg-gray-50">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/driver" element={<DriverView />} />
+            <Route path="/sarpanch" element={<SarpanchView />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <BottomNav />
+        </div>
+      </RegionProvider>
     </Router>
   )
 }
