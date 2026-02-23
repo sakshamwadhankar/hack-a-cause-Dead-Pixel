@@ -7,6 +7,7 @@ const API_URL = 'http://localhost:8000'
 function QuickActions({ tankers, stats, onRefresh, showToast }) {
   const [showStats, setShowStats] = useState(false)
   const [allocating, setAllocating] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
 
   const autoAllocate = async () => {
     setAllocating(true)
@@ -42,6 +43,20 @@ function QuickActions({ tankers, stats, onRefresh, showToast }) {
     }
   }
 
+  const refreshLiveData = async () => {
+    setRefreshing(true)
+    try {
+      await axios.post(`${API_URL}/villages/refresh-all`)
+      showToast('✅ Live data updated from Open-Meteo API', 'success')
+      onRefresh()
+    } catch (error) {
+      console.error('Error refreshing data:', error)
+      showToast('Failed to refresh live data', 'error')
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'available': return 'bg-green-100 text-green-800'
@@ -56,6 +71,21 @@ function QuickActions({ tankers, stats, onRefresh, showToast }) {
       <h3 className="text-xl font-semibold mb-4 text-gray-800">Quick Actions</h3>
       
       <div className="space-y-3 mb-6">
+        <button
+          onClick={refreshLiveData}
+          disabled={refreshing}
+          className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition font-semibold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {refreshing ? (
+            <>
+              <div className="animate-spin mr-2 h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+              Refreshing...
+            </>
+          ) : (
+            <>🔄 Refresh Live Data</>
+          )}
+        </button>
+
         <button
           onClick={autoAllocate}
           disabled={allocating}

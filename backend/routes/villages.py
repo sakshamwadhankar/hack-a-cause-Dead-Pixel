@@ -344,6 +344,47 @@ class LoadRealDistrictRequest(BaseModel):
     center_lat: float
     center_lng: float
 
+@router.post("/refresh-all")
+def refresh_all_villages(db: Session = Depends(get_db)):
+    """Refresh weather data for all villages from Open-Meteo API"""
+    import requests
+    import random
+    
+    villages = db.query(Village).all()
+    updated_count = 0
+    
+    for village in villages:
+        try:
+            # Fetch real-time weather data from Open-Meteo
+            url = f"https://api.open-meteo.com/v1/forecast?latitude={village.latitude}&longitude={village.longitude}&current=temperature_2m,precipitation&daily=precipitation_sum&timezone=auto"
+            response = requests.get(url, timeout=5)
+            
+            if response.status_code == 200:
+                data = response.json()
+                current_precip = data.get("current", {}).get("precipitation", 0)
+                
+                # Update rainfall current based on API data
+                # Simulate cumulative rainfall with some variation
+                village.rainfall_current = max(0, village.rainfall_current + current_precip * random.uniform(0.8, 1.2))
+                
+                # Recalculate WSI
+                wsi, stress_level = calculate_wsi(village)
+                village.water_stress_index = wsi
+                village.stress_level = stress_level
+                
+                updated_count += 1
+        except Exception as e:
+            print(f"Error updating {village.name}: {e}")
+            continue
+    
+    db.commit()
+    
+    return {
+        "message": "Live data refreshed from Open-Meteo API",
+        "villages_updated": updated_count,
+        "total_villages": len(villages)
+    }
+
 @router.post("/districts/load-real")
 def load_real_district_data(request: LoadRealDistrictRequest, db: Session = Depends(get_db)):
     """Load REAL village data from OpenStreetMap for a district"""

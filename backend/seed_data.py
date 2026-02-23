@@ -1,5 +1,5 @@
 from database import SessionLocal
-from models import Village, Tanker
+from models import Village, Tanker, Driver
 import real_data_fetcher
 
 def seed_database():
@@ -9,6 +9,7 @@ def seed_database():
         # Clear existing data
         db.query(Village).delete()
         db.query(Tanker).delete()
+        db.query(Driver).delete()
         
         # MARATHWADA REGION - 15 villages with REAL 2024 government data
         marathwada_villages = [
@@ -289,9 +290,52 @@ def seed_database():
         for tanker in marathwada_tankers + nagpur_tankers:
             db.add(tanker)
         
+        # Add sample drivers
+        drivers = [
+            Driver(
+                name="Ramesh Patil",
+                phone="9876543210",
+                vehicle_number="TN-LAT-001",
+                district="Latur",
+                is_active=True
+            ),
+            Driver(
+                name="Suresh Jadhav",
+                phone="9765432109",
+                vehicle_number="TN-LAT-002",
+                district="Latur",
+                is_active=True
+            ),
+            Driver(
+                name="Vijay Shinde",
+                phone="9654321098",
+                vehicle_number="TN-OSM-001",
+                district="Osmanabad",
+                is_active=True
+            ),
+            Driver(
+                name="Ravi Thakur",
+                phone="9321098765",
+                vehicle_number="TN-NGP-001",
+                district="Nagpur",
+                is_active=True
+            ),
+            Driver(
+                name="Sunil Wankhede",
+                phone="9210987654",
+                vehicle_number="TN-NGP-002",
+                district="Nagpur",
+                is_active=True
+            )
+        ]
+        
+        for driver in drivers:
+            db.add(driver)
+        
         db.commit()
         print("Database seeded successfully with 30 villages (15 Marathwada + 15 Nagpur)!")
         print("Using REAL 2024 government data from IMD, CGWB, and Census India")
+        print(f"Added {len(drivers)} sample drivers for PWA app testing")
         
     except Exception as e:
         print(f"Error seeding database: {e}")

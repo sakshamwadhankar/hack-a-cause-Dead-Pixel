@@ -1,5 +1,5 @@
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import axios from 'axios'
 import 'leaflet/dist/leaflet.css'
 
@@ -21,6 +21,23 @@ function MapUpdater({ center, zoom }) {
 }
 
 function VillageMap({ villages, tankers, assignments, center, zoom, onRefresh, showToast }) {
+  const [alertsGenerated, setAlertsGenerated] = useState(false)
+
+  useEffect(() => {
+    if (!alertsGenerated && villages.length > 0) {
+      generateAlertsOnLoad()
+      setAlertsGenerated(true)
+    }
+  }, [villages])
+
+  const generateAlertsOnLoad = async () => {
+    try {
+      await axios.post(`${API_URL}/alerts/generate`)
+    } catch (error) {
+      console.error('Error auto-generating alerts:', error)
+    }
+  }
+
   const getMarkerColor = (stressLevel) => {
     switch (stressLevel) {
       case 'critical': return '#dc2626'

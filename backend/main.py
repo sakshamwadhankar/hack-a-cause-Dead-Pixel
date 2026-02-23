@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base, SessionLocal
-from routes import villages, tankers, alerts
+from routes import villages, tankers, alerts, driver_auth
 from models import Village
 
 Base.metadata.create_all(bind=engine)
@@ -35,6 +35,7 @@ app.add_middleware(
 app.include_router(villages.router)
 app.include_router(tankers.router)
 app.include_router(alerts.router)
+app.include_router(driver_auth.router)
 
 @app.get("/")
 def root():

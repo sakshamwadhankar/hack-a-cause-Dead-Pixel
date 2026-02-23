@@ -135,6 +135,44 @@ function DistrictSelect() {
             </div>
           )}
 
+          {/* Quick Select Buttons */}
+          {!selectedDistrict && (
+            <div className="mb-6 animate-fadeIn">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Quick Demo Districts
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                <button
+                  onClick={() => {
+                    handleStateChange('Maharashtra')
+                    setTimeout(() => handleDistrictChange('Nagpur'), 100)
+                  }}
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition font-semibold text-sm"
+                >
+                  🎯 Try Nagpur
+                </button>
+                <button
+                  onClick={() => {
+                    handleStateChange('Maharashtra')
+                    setTimeout(() => handleDistrictChange('Latur'), 100)
+                  }}
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition font-semibold text-sm"
+                >
+                  🎯 Try Latur
+                </button>
+                <button
+                  onClick={() => {
+                    handleStateChange('Maharashtra')
+                    setTimeout(() => handleDistrictChange('Osmanabad'), 100)
+                  }}
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition font-semibold text-sm"
+                >
+                  🎯 Try Osmanabad
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* District Info Card */}
           {districtData && (
             <div className="mb-6 p-6 bg-blue-50 rounded-lg border-2 border-blue-200 animate-fadeIn">

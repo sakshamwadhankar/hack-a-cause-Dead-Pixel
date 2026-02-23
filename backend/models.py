@@ -81,3 +81,35 @@ class Alert(Base):
     message = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
+
+class Driver(Base):
+    __tablename__ = "drivers"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    phone = Column(String, unique=True, nullable=False, index=True)
+    vehicle_number = Column(String)
+    district = Column(String)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class DriverOTP(Base):
+    __tablename__ = "driver_otps"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    phone = Column(String, nullable=False, index=True)
+    otp = Column(String, nullable=False)
+    expires_at = Column(DateTime)
+    is_used = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class DriverSession(Base):
+    __tablename__ = "driver_sessions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    driver_id = Column(Integer, ForeignKey("drivers.id"))
+    token = Column(String, unique=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    expires_at = Column(DateTime)
+    is_active = Column(Boolean, default=True)
+    driver = relationship("Driver")

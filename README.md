@@ -95,6 +95,13 @@
 - Node.js 16+
 - npm or yarn
 
+### Quick Start (Windows)
+
+Simply double-click `start.bat` - it will automatically:
+1. Start the backend server on port 8000
+2. Start the frontend dev server on port 5173
+3. Open your browser to http://localhost:5173
+
 ### Backend Setup
 
 1. Navigate to backend directory:
@@ -138,6 +145,22 @@ npm run dev
 ```
 
 Frontend will be available at: **http://localhost:5173**
+
+---
+
+## 🎬 2-Minute Demo Flow
+
+Perfect for judges and stakeholders - showcases all key features:
+
+1. **Open app** → Select Nagpur district (or use quick button 🎯 Try Nagpur)
+2. **Dashboard loads** → Real village data from OpenStreetMap appears on map
+3. **Click "Auto-Allocate Tankers"** → Watch smart algorithm dispatch tankers to critical villages
+4. **Switch to Driver view** → See optimized routes and delivery tracking
+5. **Switch to Analytics** → View charts, tables, and comprehensive reports
+6. **Switch to Sarpanch view** → Show village-level SMS alerts and water requests
+7. **Click "Refresh Live Data"** → Demonstrates real API call to Open-Meteo weather service
+
+**Total time: 2 minutes | Shows: AI allocation, real data, multi-user interfaces, live updates**
 
 ---
 

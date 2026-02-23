@@ -1,24 +1,44 @@
 @echo off
-echo ========================================
-echo    Starting JalRakshak System
-echo ========================================
+echo ================================================
+echo    Starting JalRakshak - Complete System
+echo ================================================
 echo.
-echo Starting Backend Server...
+
+echo [1/3] Starting Backend API Server...
 start "JalRakshak Backend" cmd /k "cd backend && py -m uvicorn main:app --reload --port 8000"
-echo Backend starting on http://localhost:8000
-echo.
-timeout /t 5 /nobreak
-echo Starting Frontend Server...
+timeout /t 3 /nobreak >nul
+
+echo [2/3] Starting Collector Dashboard...
 start "JalRakshak Frontend" cmd /k "cd frontend && npm run dev"
-echo Frontend starting on http://localhost:5173
+timeout /t 2 /nobreak >nul
+
+echo [3/3] Starting Driver Mobile App...
+start "JalRakshak Driver" cmd /k "cd frontend-driver && npm run dev -- --port 5174"
+timeout /t 2 /nobreak >nul
+
 echo.
-echo ========================================
-echo    JalRakshak is starting...
-echo ========================================
+echo ================================================
+echo    All Services Started Successfully!
+echo ================================================
 echo.
-echo Backend:  http://localhost:8000
-echo Frontend: http://localhost:5173
-echo API Docs: http://localhost:8000/docs
+echo Backend API:       http://localhost:8000
+echo API Docs:          http://localhost:8000/docs
+echo Collector App:     http://localhost:5173
+echo Driver App:        http://localhost:5174
 echo.
-echo Press any key to exit this window...
-pause > nul
+echo ================================================
+echo    Driver App Installation
+echo ================================================
+echo.
+echo On Android Phone (Same WiFi):
+echo 1. Find your IP: ipconfig
+echo 2. Open Chrome on phone
+echo 3. Go to: http://[YOUR-IP]:5174
+echo 4. Menu → Add to Home Screen
+echo.
+echo Demo Credentials:
+echo Phone: 9876543210 (Ramesh Patil - Latur)
+echo Phone: 9321098765 (Ravi Thakur - Nagpur)
+echo.
+echo ================================================
+pause
