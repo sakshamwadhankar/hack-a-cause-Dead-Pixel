@@ -2,7 +2,9 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react
 import Dashboard from './pages/Dashboard'
 import DriverView from './pages/DriverView'
 import SarpanchView from './pages/SarpanchView'
-import { Droplets, Map, Truck, Home } from 'lucide-react'
+import Analytics from './pages/Analytics'
+import NotFound from './pages/NotFound'
+import { Map, Truck, Home, BarChart3 } from 'lucide-react'
 
 function BottomNav() {
   const location = useLocation()
@@ -11,6 +13,7 @@ function BottomNav() {
   
   const navItems = [
     { path: '/', icon: Map, label: 'Dashboard' },
+    { path: '/analytics', icon: BarChart3, label: 'Analytics' },
     { path: '/driver', icon: Truck, label: 'Driver' },
     { path: '/sarpanch', icon: Home, label: 'Sarpanch' }
   ]
@@ -47,8 +50,10 @@ function App() {
       <div className="min-h-screen bg-gray-50">
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/analytics" element={<Analytics />} />
           <Route path="/driver" element={<DriverView />} />
           <Route path="/sarpanch" element={<SarpanchView />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
         <BottomNav />
       </div>

@@ -16,11 +16,11 @@ function QuickActions({ tankers, stats, onRefresh, showToast }) {
       
       if (assignments_created > 0) {
         showToast(
-          `${assignments_created} tanker(s) dispatched to ${villages_covered.length} village(s)`,
+          `✅ ${assignments_created} tanker(s) dispatched to: ${villages_covered.join(', ')}`,
           'success'
         )
       } else {
-        showToast('No tankers available or no critical villages need water', 'success')
+        showToast('ℹ️ All critical villages already have tankers assigned', 'success')
       }
       onRefresh()
     } catch (error) {

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
-from models import Village, Alert
+from models import Village, Alert, TankerAssignment, Tanker
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import date
@@ -30,6 +30,47 @@ class VillageResponse(BaseModel):
 
 class UpdateWaterRequest(BaseModel):
     days_without_water: int
+
+@router.get("/all-with-status")
+def get_villages_with_status(db: Session = Depends(get_db)):
+    villages = db.query(Village).all()
+    assignments = db.query(TankerAssignment).filter(
+        TankerAssignment.status.in_(["pending", "in_transit"])
+    ).all()
+    
+    assignment_map = {a.village_id: a for a in assignments}
+    
+    result = []
+    for village in villages:
+        wsi, stress_level = calculate_wsi(village)
+        village.water_stress_index = wsi
+        village.stress_level = stress_level
+        
+        assignment = assignment_map.get(village.id)
+        tanker = None
+        if assignment:
+            tanker = db.query(Tanker).filter(Tanker.id == assignment.tanker_id).first()
+        
+        result.append({
+            "id": village.id,
+            "name": village.name,
+            "district": village.district,
+            "latitude": village.latitude,
+            "longitude": village.longitude,
+            "population": village.population,
+            "rainfall_current": village.rainfall_current,
+            "rainfall_normal": village.rainfall_normal,
+            "groundwater_current": village.groundwater_current,
+            "groundwater_last_year": village.groundwater_last_year,
+            "water_stress_index": village.water_stress_index,
+            "stress_level": village.stress_level,
+            "days_without_water": village.days_without_water,
+            "assigned": assignment is not None,
+            "tanker_vehicle": tanker.vehicle_number if tanker else None
+        })
+    
+    db.commit()
+    return result
 
 @router.get("/", response_model=List[VillageResponse])
 def get_villages(db: Session = Depends(get_db)):

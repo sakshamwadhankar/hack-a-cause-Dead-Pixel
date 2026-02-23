@@ -99,10 +99,15 @@ function Dashboard() {
             </div>
           </div>
         </div>
+        <div className="bg-blue-800 px-6 py-2">
+          <p className="text-sm text-blue-100 text-center">
+            🌍 Marathwada Drought Management System | Latur • Osmanabad • Beed • Nanded • Parbhani
+          </p>
+        </div>
       </nav>
 
       <div className="container mx-auto px-6 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           <StatsCard
             title="Total Villages"
             value={stats?.total_villages || 0}
@@ -128,6 +133,12 @@ function Dashboard() {
             icon={<TrendingUp size={24} />}
             color="purple"
           />
+        </div>
+
+        <div className="text-center mb-6">
+          <p className="text-sm text-gray-600">
+            Last Updated: {formatDateTime(currentTime)} • Auto-refresh every 30 seconds
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
