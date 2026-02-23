@@ -23,21 +23,21 @@ function MapUpdater({ center, zoom }) {
 function VillageMap({ villages, tankers, assignments, center, zoom, onRefresh, showToast }) {
   const getMarkerColor = (stressLevel) => {
     switch (stressLevel) {
-      case 'critical': return '#ef4444'
-      case 'high': return '#f97316'
-      case 'moderate': return '#eab308'
-      case 'safe': return '#22c55e'
+      case 'critical': return '#dc2626'
+      case 'high': return '#ea580c'
+      case 'moderate': return '#ca8a04'
+      case 'safe': return '#16a34a'
       default: return '#6b7280'
     }
   }
 
   const getMarkerRadius = (stressLevel) => {
     switch (stressLevel) {
-      case 'critical': return 14
-      case 'high': return 12
-      case 'moderate': return 10
-      case 'safe': return 8
-      default: return 10
+      case 'critical': return 10
+      case 'high': return 9
+      case 'moderate': return 8
+      case 'safe': return 7
+      default: return 8
     }
   }
 
@@ -93,10 +93,11 @@ function VillageMap({ villages, tankers, assignments, center, zoom, onRefresh, s
             center={[village.latitude, village.longitude]}
             radius={getMarkerRadius(village.stress_level)}
             pathOptions={{
-              color: getMarkerColor(village.stress_level),
+              color: '#ffffff',
               fillColor: getMarkerColor(village.stress_level),
-              fillOpacity: 0.7,
-              weight: 2
+              fillOpacity: 0.85,
+              weight: 2,
+              opacity: 1
             }}
           >
             <Popup maxWidth={320} className="custom-popup">
@@ -166,20 +167,20 @@ function VillageMap({ villages, tankers, assignments, center, zoom, onRefresh, s
         <div className="text-xs font-semibold text-gray-700 mb-2">Stress Level</div>
         <div className="space-y-1">
           <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded-full bg-red-500"></div>
-            <span className="text-xs">Critical</span>
+            <div className="w-4 h-4 rounded-full border-2 border-white" style={{backgroundColor: '#dc2626'}}></div>
+            <span className="text-xs">Critical (70+)</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded-full bg-orange-500"></div>
-            <span className="text-xs">High</span>
+            <div className="w-4 h-4 rounded-full border-2 border-white" style={{backgroundColor: '#ea580c'}}></div>
+            <span className="text-xs">High (50-70)</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded-full bg-yellow-500"></div>
-            <span className="text-xs">Moderate</span>
+            <div className="w-4 h-4 rounded-full border-2 border-white" style={{backgroundColor: '#ca8a04'}}></div>
+            <span className="text-xs">Moderate (30-50)</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded-full bg-green-500"></div>
-            <span className="text-xs">Safe</span>
+            <div className="w-4 h-4 rounded-full border-2 border-white" style={{backgroundColor: '#16a34a'}}></div>
+            <span className="text-xs">Safe (&lt;30)</span>
           </div>
         </div>
       </div>
