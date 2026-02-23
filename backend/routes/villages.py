@@ -312,3 +312,121 @@ def load_district_data(request: LoadDistrictRequest, db: Session = Depends(get_d
         "villages": new_villages,
         "generated": True
     }
+
+
+class LoadRealDistrictRequest(BaseModel):
+    state: str
+    district: str
+    center_lat: float
+    center_lng: float
+
+@router.post("/districts/load-real")
+def load_real_district_data(request: LoadRealDistrictRequest, db: Session = Depends(get_db)):
+    """Load REAL village data from OpenStreetMap for a district"""
+    from osm_village_fetcher import fetch_villages_for_district, fetch_villages_by_coordinates
+    from real_data_fetcher import get_district_data
+    
+    # Try to fetch from OSM by district name first
+    osm_villages = fetch_villages_for_district(request.district, request.state, max_villages=15)
+    
+    # Fallback to coordinate-based search if needed
+    if len(osm_villages) < 3:
+        print(f"Using fallback coordinate search for {request.district}")
+        osm_villages = fetch_villages_by_coordinates(
+            request.district,
+            request.state,
+            request.center_lat,
+            request.center_lng,
+            max_villages=15
+        )
+    
+    if not osm_villages:
+        raise HTTPException(status_code=404, detail="No villages found in OpenStreetMap for this district")
+    
+    # Get district rainfall data
+    district_data = get_district_data(request.state, request.district)
+    if not district_data:
+        raise HTTPException(status_code=404, detail="District not found in rainfall database")
+    
+    new_villages = []
+    skipped = 0
+    
+    for v_data in osm_villages:
+        # Check if village already exists
+        existing = db.query(Village).filter(
+            Village.name == v_data["name"],
+            Village.district == v_data["district"]
+        ).first()
+        
+        if existing:
+            skipped += 1
+            continue
+        
+        # Estimate current rainfall (60-90% of normal for drought simulation)
+        import random
+        rainfall_percent = random.uniform(0.60, 0.90)
+        rainfall_current = int(district_data["normal_mm"] * rainfall_percent)
+        
+        # Estimate groundwater based on district rainfall
+        if district_data["normal_mm"] < 500:  # Arid regions
+            groundwater_current = random.uniform(12.0, 18.0)
+            groundwater_last_year = random.uniform(8.0, 12.0)
+        elif district_data["normal_mm"] < 800:  # Semi-arid
+            groundwater_current = random.uniform(8.0, 14.0)
+            groundwater_last_year = random.uniform(6.0, 10.0)
+        else:  # Normal/high rainfall
+            groundwater_current = random.uniform(4.0, 10.0)
+            groundwater_last_year = random.uniform(3.0, 7.0)
+        
+        # Days without water based on rainfall deficit
+        deficit_percent = ((district_data["normal_mm"] - rainfall_current) / district_data["normal_mm"]) * 100
+        if deficit_percent > 40:
+            days_without_water = random.randint(8, 15)
+        elif deficit_percent > 30:
+            days_without_water = random.randint(4, 10)
+        elif deficit_percent > 20:
+            days_without_water = random.randint(1, 5)
+        else:
+            days_without_water = random.randint(0, 2)
+        
+        village = Village(
+            name=v_data["name"],
+            district=v_data["district"],
+            region=v_data["state"],
+            latitude=v_data["latitude"],
+            longitude=v_data["longitude"],
+            population=v_data["population"],
+            rainfall_current=rainfall_current,
+            rainfall_normal=district_data["normal_mm"],
+            groundwater_current=round(groundwater_current, 1),
+            groundwater_last_year=round(groundwater_last_year, 1),
+            days_without_water=days_without_water,
+            water_stress_index=0.0,
+            stress_level="safe"
+        )
+        
+        # Calculate WSI
+        wsi, stress_level = calculate_wsi(village)
+        village.water_stress_index = wsi
+        village.stress_level = stress_level
+        
+        db.add(village)
+        new_villages.append(village)
+    
+    db.commit()
+    
+    # Refresh to get IDs
+    for village in new_villages:
+        db.refresh(village)
+    
+    village_names = [v.name for v in new_villages]
+    
+    return {
+        "villages_loaded": len(new_villages),
+        "villages_skipped": skipped,
+        "source": "OpenStreetMap",
+        "district": request.district,
+        "state": request.state,
+        "village_names": village_names,
+        "villages": new_villages
+    }

@@ -72,7 +72,7 @@ function Dashboard() {
           high_count,
           moderate_count,
           safe_count,
-          avg_wsi: avg_wsi.toFixed(2)
+          avg_wsi
         })
       }
       
@@ -90,12 +90,18 @@ function Dashboard() {
 
   const handleLoadDistrictData = async () => {
     try {
-      showToast('Generating village data...', 'info')
-      const result = await loadDistrictData()
-      showToast(result.message, 'success')
+      showToast('Fetching real villages from OpenStreetMap...', 'info')
+      const result = await axios.post(`${API_URL}/villages/districts/load-real`, {
+        state: selectedState,
+        district: selectedDistrict,
+        center_lat: districtData.lat,
+        center_lng: districtData.lng
+      })
+      showToast(`✅ ${result.data.villages_loaded} real villages loaded from OpenStreetMap!`, 'success')
       setNeedsDataLoad(false)
       fetchData()
     } catch (error) {
+      console.error('Error loading district data:', error)
       showToast('Error loading district data', 'error')
     }
   }
@@ -289,10 +295,10 @@ function Dashboard() {
                         onClick={handleLoadDistrictData}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition"
                       >
-                        Load District Data
+                        🗺️ Load Real Villages from OpenStreetMap
                       </button>
                       <p className="text-sm text-gray-500 mt-3">
-                        This will generate 5 sample villages with real IMD rainfall data
+                        Fetches real village names and coordinates from OSM + real IMD rainfall data
                       </p>
                     </div>
                   </div>
