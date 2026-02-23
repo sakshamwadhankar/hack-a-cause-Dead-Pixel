@@ -59,10 +59,16 @@ def get_regions(db: Session = Depends(get_db)):
     ]
 
 @router.get("/all-with-status")
-def get_villages_with_status(region: Optional[str] = Query(None), db: Session = Depends(get_db)):
+def get_villages_with_status(
+    region: Optional[str] = Query(None), 
+    district: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
     query = db.query(Village)
     if region:
         query = query.filter(Village.region == region)
+    if district:
+        query = query.filter(Village.district == district)
     
     villages = query.all()
     assignments = db.query(TankerAssignment).filter(
@@ -105,10 +111,16 @@ def get_villages_with_status(region: Optional[str] = Query(None), db: Session = 
     return result
 
 @router.get("/", response_model=List[VillageResponse])
-def get_villages(region: Optional[str] = Query(None), db: Session = Depends(get_db)):
+def get_villages(
+    region: Optional[str] = Query(None),
+    district: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
     query = db.query(Village)
     if region:
         query = query.filter(Village.region == region)
+    if district:
+        query = query.filter(Village.district == district)
     
     villages = query.all()
     for village in villages:
@@ -119,10 +131,16 @@ def get_villages(region: Optional[str] = Query(None), db: Session = Depends(get_
     return villages
 
 @router.get("/critical", response_model=List[VillageResponse])
-def get_critical_villages(region: Optional[str] = Query(None), db: Session = Depends(get_db)):
+def get_critical_villages(
+    region: Optional[str] = Query(None),
+    district: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
     query = db.query(Village)
     if region:
         query = query.filter(Village.region == region)
+    if district:
+        query = query.filter(Village.district == district)
     
     villages = query.all()
     for village in villages:
@@ -135,10 +153,16 @@ def get_critical_villages(region: Optional[str] = Query(None), db: Session = Dep
     return sorted(critical_villages, key=lambda v: v.water_stress_index, reverse=True)
 
 @router.get("/stats")
-def get_village_stats(region: Optional[str] = Query(None), db: Session = Depends(get_db)):
+def get_village_stats(
+    region: Optional[str] = Query(None),
+    district: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
     query = db.query(Village)
     if region:
         query = query.filter(Village.region == region)
+    if district:
+        query = query.filter(Village.district == district)
     
     villages = query.all()
     
