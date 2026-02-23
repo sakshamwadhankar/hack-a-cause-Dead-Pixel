@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine, Base
-from models import Village, Tanker, TankerRequest, Alert
+from models import Village, Tanker, TankerRequest, Alert, TankerAssignment
 from datetime import datetime, timedelta
 import random
 from wsi_calculator import calculate_wsi
@@ -10,6 +10,7 @@ Base.metadata.create_all(bind=engine)
 def seed_database():
     db = SessionLocal()
     
+    db.query(TankerAssignment).delete()
     db.query(Alert).delete()
     db.query(TankerRequest).delete()
     db.query(Tanker).delete()
@@ -89,11 +90,11 @@ def seed_database():
     db.commit()
     
     tankers_data = [
-        {"vehicle": "MH-15-AB-1234", "driver": "Rajesh Kumar", "phone": "+91-9876543210", "capacity": 10000, "lat": 18.3967, "lng": 77.1131, "status": "available"},
-        {"vehicle": "MH-15-CD-5678", "driver": "Suresh Patil", "phone": "+91-9876543211", "capacity": 12000, "lat": 18.1667, "lng": 76.0333, "status": "available"},
-        {"vehicle": "MH-15-EF-9012", "driver": "Mahesh Desai", "phone": "+91-9876543212", "capacity": 8000, "lat": 18.9833, "lng": 75.7500, "status": "available"},
-        {"vehicle": "MH-15-GH-3456", "driver": "Ganesh Rao", "phone": "+91-9876543213", "capacity": 10000, "lat": 19.1500, "lng": 77.3167, "status": "assigned"},
-        {"vehicle": "MH-15-IJ-7890", "driver": "Ramesh Shah", "phone": "+91-9876543214", "capacity": 15000, "lat": 18.7333, "lng": 76.3833, "status": "available"},
+        {"vehicle": "TN-LAT-001", "driver": "Ramesh Patil", "phone": "9876543210", "capacity": 10000, "lat": 18.4088, "lng": 76.5604, "status": "available"},
+        {"vehicle": "TN-LAT-002", "driver": "Suresh Jadhav", "phone": "9765432109", "capacity": 8000, "lat": 17.7500, "lng": 76.7500, "status": "available"},
+        {"vehicle": "TN-OSM-001", "driver": "Vijay Shinde", "phone": "9654321098", "capacity": 12000, "lat": 18.1667, "lng": 76.0333, "status": "available"},
+        {"vehicle": "TN-BED-001", "driver": "Anil Deshmukh", "phone": "9543210987", "capacity": 10000, "lat": 18.9833, "lng": 75.7500, "status": "available"},
+        {"vehicle": "TN-NAN-001", "driver": "Pradeep More", "phone": "9432109876", "capacity": 9000, "lat": 19.1500, "lng": 77.3167, "status": "available"},
     ]
     
     for t in tankers_data:
@@ -101,7 +102,7 @@ def seed_database():
             vehicle_number=t["vehicle"],
             driver_name=t["driver"],
             driver_phone=t["phone"],
-            capacity=t["capacity"],
+            capacity_liters=t["capacity"],
             current_location_lat=t["lat"],
             current_location_lng=t["lng"],
             status=t["status"]

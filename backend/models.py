@@ -30,12 +30,14 @@ class Tanker(Base):
     vehicle_number = Column(String, unique=True, index=True)
     driver_name = Column(String)
     driver_phone = Column(String)
-    capacity = Column(Integer)
+    capacity_liters = Column(Integer)
     current_location_lat = Column(Float)
     current_location_lng = Column(Float)
+    current_village_id = Column(Integer, ForeignKey("villages.id"), nullable=True)
     status = Column(String)
-    assigned_village_id = Column(Integer, ForeignKey("villages.id"), nullable=True)
-    assigned_village = relationship("Village")
+    last_updated = Column(DateTime, default=datetime.utcnow)
+    current_village = relationship("Village")
+    assignments = relationship("TankerAssignment", back_populates="tanker")
 
 class TankerRequest(Base):
     __tablename__ = "tanker_requests"
@@ -49,6 +51,22 @@ class TankerRequest(Base):
     assigned_tanker_id = Column(Integer, ForeignKey("tankers.id"), nullable=True)
     assigned_tanker = relationship("Tanker")
     fulfilled_at = Column(DateTime, nullable=True)
+
+class TankerAssignment(Base):
+    __tablename__ = "tanker_assignments"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    tanker_id = Column(Integer, ForeignKey("tankers.id"))
+    village_id = Column(Integer, ForeignKey("villages.id"))
+    assigned_at = Column(DateTime, default=datetime.utcnow)
+    delivered_at = Column(DateTime, nullable=True)
+    status = Column(String)
+    priority_score = Column(Float)
+    estimated_arrival_minutes = Column(Integer)
+    liters_delivered = Column(Integer, nullable=True)
+    notes = Column(String, nullable=True)
+    tanker = relationship("Tanker", back_populates="assignments")
+    village = relationship("Village")
 
 class Alert(Base):
     __tablename__ = "alerts"
