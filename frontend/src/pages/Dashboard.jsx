@@ -5,13 +5,13 @@ import StatsCard from '../components/StatsCard'
 import AlertsList from '../components/AlertsList'
 import QuickActions from '../components/QuickActions'
 import Toast from '../components/Toast'
-import { useRegion } from '../context/RegionContext'
-import { AlertTriangle, Droplets, Truck, MapPin, TrendingUp, ChevronDown } from 'lucide-react'
+import { useDistrict } from '../context/DistrictContext'
+import { AlertTriangle, Droplets, Truck, MapPin, TrendingUp } from 'lucide-react'
 
 const API_URL = 'http://localhost:8000'
 
 function Dashboard() {
-  const { selectedState, selectedDistrict, districtData, allStates, setRegion, loadDistrictData } = useRegion()
+  const { district, state, center_lat, center_lng, districtInfo } = useDistrict()
   const [stats, setStats] = useState(null)
   const [villages, setVillages] = useState([])
   const [tankers, setTankers] = useState([])
@@ -20,19 +20,23 @@ function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [toast, setToast] = useState(null)
-  const [showStateDropdown, setShowStateDropdown] = useState(false)
-  const [showDistrictDropdown, setShowDistrictDropdown] = useState(false)
-  const [needsDataLoad, setNeedsDataLoad] = useState(false)
 
   useEffect(() => {
-    if (selectedDistrict && districtData) {
+    if (district) {
       fetchData()
+    } else {
+      // All India view
+      fetchAllIndiaData()
     }
-  }, [selectedState, selectedDistrict])
+  }, [district])
 
   useEffect(() => {
     const dataInterval = setInterval(() => {
-      if (selectedDistrict && districtData && !needsDataLoad) fetchData()
+      if (district) {
+        fetchData()
+      } else {
+        fetchAllIndiaData()
+      }
     }, 30000)
     const timeInterval = setInterval(() => setCurrentTime(new Date()), 1000)
     
@@ -40,44 +44,39 @@ function Dashboard() {
       clearInterval(dataInterval)
       clearInterval(timeInterval)
     }
-  }, [selectedDistrict, districtData, needsDataLoad])
+  }, [district])
 
   const fetchData = async () => {
     try {
       const [villagesRes, tankersRes, alertsRes, assignmentsRes] = await Promise.all([
-        axios.get(`${API_URL}/villages/?region=${selectedState}`),
-        axios.get(`${API_URL}/tankers/`),
+        axios.get(`${API_URL}/villages/?district=${district}`),
+        axios.get(`${API_URL}/tankers/?district=${district}`),
         axios.get(`${API_URL}/alerts/`),
         axios.get(`${API_URL}/tankers/assignments/active`)
       ])
       
-      // Filter villages by district
-      const districtVillages = villagesRes.data.filter(v => v.district === selectedDistrict)
+      const districtVillages = villagesRes.data
       
-      if (districtVillages.length === 0) {
-        setNeedsDataLoad(true)
-        setStats({ total_villages: 0, critical_count: 0, high_count: 0, moderate_count: 0, safe_count: 0, avg_wsi: 0 })
-      } else {
-        setNeedsDataLoad(false)
-        // Calculate stats for this district
-        const critical_count = districtVillages.filter(v => v.stress_level === 'critical').length
-        const high_count = districtVillages.filter(v => v.stress_level === 'high').length
-        const moderate_count = districtVillages.filter(v => v.stress_level === 'moderate').length
-        const safe_count = districtVillages.filter(v => v.stress_level === 'safe').length
-        const avg_wsi = districtVillages.reduce((sum, v) => sum + v.water_stress_index, 0) / districtVillages.length
-        
-        setStats({
-          total_villages: districtVillages.length,
-          critical_count,
-          high_count,
-          moderate_count,
-          safe_count,
-          avg_wsi
-        })
-      }
+      // Calculate stats for this district
+      const critical_count = districtVillages.filter(v => v.stress_level === 'critical').length
+      const high_count = districtVillages.filter(v => v.stress_level === 'high').length
+      const moderate_count = districtVillages.filter(v => v.stress_level === 'moderate').length
+      const safe_count = districtVillages.filter(v => v.stress_level === 'safe').length
+      const avg_wsi = districtVillages.length > 0 
+        ? districtVillages.reduce((sum, v) => sum + v.water_stress_index, 0) / districtVillages.length
+        : 0
+      
+      setStats({
+        total_villages: districtVillages.length,
+        critical_count,
+        high_count,
+        moderate_count,
+        safe_count,
+        avg_wsi
+      })
       
       setVillages(districtVillages)
-      setTankers(tankersRes.data.filter(t => t.region === selectedState))
+      setTankers(tankersRes.data)
       setAlerts(alertsRes.data)
       setAssignments(assignmentsRes.data)
       setLoading(false)
@@ -88,21 +87,42 @@ function Dashboard() {
     }
   }
 
-  const handleLoadDistrictData = async () => {
+  const fetchAllIndiaData = async () => {
     try {
-      showToast('Fetching real villages from OpenStreetMap...', 'info')
-      const result = await axios.post(`${API_URL}/villages/districts/load-real`, {
-        state: selectedState,
-        district: selectedDistrict,
-        center_lat: districtData.lat,
-        center_lng: districtData.lng
+      const [villagesRes, tankersRes, alertsRes] = await Promise.all([
+        axios.get(`${API_URL}/villages/`),
+        axios.get(`${API_URL}/tankers/`),
+        axios.get(`${API_URL}/alerts/`)
+      ])
+      
+      const allVillages = villagesRes.data
+      
+      const critical_count = allVillages.filter(v => v.stress_level === 'critical').length
+      const high_count = allVillages.filter(v => v.stress_level === 'high').length
+      const moderate_count = allVillages.filter(v => v.stress_level === 'moderate').length
+      const safe_count = allVillages.filter(v => v.stress_level === 'safe').length
+      const avg_wsi = allVillages.length > 0
+        ? allVillages.reduce((sum, v) => sum + v.water_stress_index, 0) / allVillages.length
+        : 0
+      
+      setStats({
+        total_villages: allVillages.length,
+        critical_count,
+        high_count,
+        moderate_count,
+        safe_count,
+        avg_wsi
       })
-      showToast(`✅ ${result.data.villages_loaded} real villages loaded from OpenStreetMap!`, 'success')
-      setNeedsDataLoad(false)
-      fetchData()
+      
+      setVillages(allVillages)
+      setTankers(tankersRes.data)
+      setAlerts(alertsRes.data)
+      setAssignments([])
+      setLoading(false)
     } catch (error) {
-      console.error('Error loading district data:', error)
-      showToast('Error loading district data', 'error')
+      console.error('Error fetching data:', error)
+      showToast('Error loading data', 'error')
+      setLoading(false)
     }
   }
 
