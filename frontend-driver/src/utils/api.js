@@ -3,10 +3,9 @@ import axios from 'axios'
 const getBaseURL = () => {
   // Check if running in Android (Capacitor)
   if (window.Capacitor && window.Capacitor.isNativePlatform()) {
-    // IMPORTANT: Change this to YOUR computer's local IP
-    // Run: py backend/find_ip.py to get your IP
-    // Example: return "http://192.168.1.100:8000"
-    return "http://192.168.1.5:8000"  // ⚠️ UPDATE THIS WITH YOUR IP
+    // Use your computer's local IP
+    // Updated with actual IP address
+    return "http://172.19.36.129:8000"
   }
   
   // Running in browser

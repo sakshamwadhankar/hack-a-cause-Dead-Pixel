@@ -258,7 +258,7 @@ def seed_database():
             Tanker(
                 vehicle_number="TN-NGP-001",
                 driver_name="Ravi Thakur",
-                driver_phone="9321098765",
+                driver_phone="7507633352",
                 capacity_liters=11000,
                 status="available",
                 current_location_lat=21.1458,
@@ -314,8 +314,8 @@ def seed_database():
                 is_active=True
             ),
             Driver(
-                name="Ravi Thakur",
-                phone="9321098765",
+                name="Saksham",
+                phone="7507633352",
                 vehicle_number="TN-NGP-001",
                 district="Nagpur",
                 is_active=True
