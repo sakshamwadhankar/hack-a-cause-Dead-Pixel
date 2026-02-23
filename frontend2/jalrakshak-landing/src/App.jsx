@@ -149,6 +149,38 @@ function App() {
                 <span className="word" style={{ '--delay': '0.9s' }}>time.</span>
               </div>
             </div>
+            
+            {/* App Navigation Buttons */}
+            <div className="app-nav-buttons">
+              <button 
+                className={`app-nav-btn ${activeApp === 'collector' ? 'active' : ''}`}
+                onClick={() => handleAppNavigation('collector', 'http://localhost:5173/dashboard')}
+              >
+                <span className="btn-icon">🗺️</span>
+                <span className="btn-text">Collector Dashboard</span>
+              </button>
+              <button 
+                className={`app-nav-btn ${activeApp === 'driver' ? 'active' : ''}`}
+                onClick={() => handleAppNavigation('driver', 'http://localhost:5174')}
+              >
+                <span className="btn-icon">🚛</span>
+                <span className="btn-text">Driver Portal</span>
+              </button>
+              <button 
+                className={`app-nav-btn ${activeApp === 'village' ? 'active' : ''}`}
+                onClick={() => handleAppNavigation('village', 'http://localhost:5173/sarpanch')}
+              >
+                <span className="btn-icon">🏘️</span>
+                <span className="btn-text">Village Portal</span>
+              </button>
+              <button 
+                className={`app-nav-btn ${activeApp === 'analytics' ? 'active' : ''}`}
+                onClick={() => handleAppNavigation('analytics', 'http://localhost:5173/analytics')}
+              >
+                <span className="btn-icon">📊</span>
+                <span className="btn-text">Analytics</span>
+              </button>
+            </div>
           </div>
         </section>
 
@@ -280,6 +312,27 @@ function App() {
             <h2 className="contact-title">TEAM DEAD PIXEL</h2>
             <h2 className="contact-title highlight">HACK A CAUSE</h2>
             <p className="contact-subtitle">Jalmanthan • PS2 • Ramdeobaba University</p>
+          </div>
+        </section>
+
+        {/* App Integration Section */}
+        <section id="app-section" className="section app-integration-section">
+          <div className="app-integration-content">
+            {iframeLoading && (
+              <div className="iframe-loader">
+                <div className="spinner"></div>
+                <p>Loading Application...</p>
+              </div>
+            )}
+            <iframe
+              id="jalrakshak-frame"
+              src="http://localhost:5173"
+              width="100%"
+              height="100%"
+              frameBorder="0"
+              title="JalRakshak Application"
+              onLoad={() => setIframeLoading(false)}
+            />
           </div>
         </section>
       </div>
