@@ -1,34 +1,56 @@
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
 import DriverView from './pages/DriverView'
 import SarpanchView from './pages/SarpanchView'
-import { Droplets } from 'lucide-react'
+import { Droplets, Map, Truck, Home } from 'lucide-react'
+
+function BottomNav() {
+  const location = useLocation()
+  
+  const isActive = (path) => location.pathname === path
+  
+  const navItems = [
+    { path: '/', icon: Map, label: 'Dashboard' },
+    { path: '/driver', icon: Truck, label: 'Driver' },
+    { path: '/sarpanch', icon: Home, label: 'Sarpanch' }
+  ]
+  
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-lg z-50">
+      <div className="flex justify-around items-center h-16">
+        {navItems.map((item) => {
+          const Icon = item.icon
+          const active = isActive(item.path)
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex flex-col items-center justify-center flex-1 h-full transition ${
+                active 
+                  ? 'text-blue-600 bg-blue-50' 
+                  : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+              }`}
+            >
+              <Icon size={24} />
+              <span className="text-xs font-semibold mt-1">{item.label}</span>
+            </Link>
+          )
+        })}
+      </div>
+    </nav>
+  )
+}
 
 function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
-        <nav className="bg-blue-600 text-white shadow-lg">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Droplets size={32} />
-                <h1 className="text-2xl font-bold">JalRakshak</h1>
-              </div>
-              <div className="flex space-x-6">
-                <Link to="/" className="hover:text-blue-200 transition">Dashboard</Link>
-                <Link to="/driver" className="hover:text-blue-200 transition">Driver</Link>
-                <Link to="/sarpanch" className="hover:text-blue-200 transition">Sarpanch</Link>
-              </div>
-            </div>
-          </div>
-        </nav>
-        
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/driver" element={<DriverView />} />
           <Route path="/sarpanch" element={<SarpanchView />} />
         </Routes>
+        <BottomNav />
       </div>
     </Router>
   )
