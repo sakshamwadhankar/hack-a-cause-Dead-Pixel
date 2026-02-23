@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
+import { useDistrict } from '../context/DistrictContext'
 import { Truck, MapPin, Clock, Users, Droplets, CheckCircle, AlertCircle } from 'lucide-react'
 
 const API_URL = 'http://localhost:8000'
 
 function DriverView() {
+  const { district, state } = useDistrict()
   const [tankers, setTankers] = useState([])
   const [selectedTanker, setSelectedTanker] = useState(null)
   const [route, setRoute] = useState([])
@@ -16,7 +18,7 @@ function DriverView() {
 
   useEffect(() => {
     fetchTankers()
-  }, [])
+  }, [district])
 
   useEffect(() => {
     if (selectedTanker) {
@@ -27,7 +29,8 @@ function DriverView() {
 
   const fetchTankers = async () => {
     try {
-      const response = await axios.get(`${API_URL}/tankers/`)
+      const params = district ? `?district=${district}` : ''
+      const response = await axios.get(`${API_URL}/tankers/${params}`)
       setTankers(response.data)
       setLoading(false)
     } catch (error) {
@@ -106,8 +109,15 @@ function DriverView() {
         <div className="max-w-md mx-auto">
           <div className="flex items-center space-x-3 mb-3">
             <Truck size={32} />
-            <h1 className="text-2xl font-bold">🚛 Driver Portal</h1>
+            <h1 className="text-2xl font-bold">
+              🚛 Driver Portal {district && `- ${district}`}
+            </h1>
           </div>
+          {district && state && (
+            <p className="text-sm text-orange-100 mb-3">
+              📍 {district} District, {state}
+            </p>
+          )}
           {selectedTanker && (
             <div className="text-sm bg-orange-700 rounded-lg p-2">
               <p className="font-semibold">{selectedTanker.driver_name}</p>

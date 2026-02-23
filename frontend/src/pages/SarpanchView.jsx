@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
+import { useDistrict } from '../context/DistrictContext'
 import { Home, Droplets, Cloud, Users, AlertCircle, Truck, CheckCircle, Phone } from 'lucide-react'
 
 const API_URL = 'http://localhost:8000'
 
 function SarpanchView() {
+  const { district, state } = useDistrict()
   const [villages, setVillages] = useState([])
   const [selectedVillage, setSelectedVillage] = useState(null)
   const [assignments, setAssignments] = useState([])
@@ -16,7 +18,7 @@ function SarpanchView() {
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [district])
 
   useEffect(() => {
     if (selectedVillage) {
@@ -26,8 +28,9 @@ function SarpanchView() {
 
   const fetchData = async () => {
     try {
+      const params = district ? `?district=${district}` : ''
       const [villagesRes, assignmentsRes, allAssignmentsRes] = await Promise.all([
-        axios.get(`${API_URL}/villages/`),
+        axios.get(`${API_URL}/villages/${params}`),
         axios.get(`${API_URL}/tankers/assignments/active`),
         axios.get(`${API_URL}/tankers/assignments/all`)
       ])
@@ -151,8 +154,15 @@ function SarpanchView() {
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center space-x-3">
             <Home size={32} />
-            <h1 className="text-2xl font-bold">🏘️ Village Portal</h1>
+            <h1 className="text-2xl font-bold">
+              🏘️ Village Portal {district && `- ${district}`}
+            </h1>
           </div>
+          {district && state && (
+            <p className="text-sm text-green-100 mt-2">
+              📍 {district} District, {state}
+            </p>
+          )}
         </div>
       </div>
 
