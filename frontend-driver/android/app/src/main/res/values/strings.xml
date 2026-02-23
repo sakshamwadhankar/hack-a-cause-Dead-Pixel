@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">JalRakshak Driver</string>
+    <string name="title_activity_main">JalRakshak Driver</string>
+    <string name="package_name">com.deadpixel.jalrakshak.driver</string>
+    <string name="custom_url_scheme">com.deadpixel.jalrakshak.driver</string>
+</resources>
