@@ -120,7 +120,7 @@ def get_villages(
     if region:
         query = query.filter(Village.region == region)
     if district:
-        query = query.filter(Village.district == district)
+        query = query.filter(Village.district.ilike(district))
     
     villages = query.all()
     for village in villages:

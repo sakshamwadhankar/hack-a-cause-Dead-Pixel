@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
+import { useDistrict } from '../context/DistrictContext'
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { TrendingUp, AlertTriangle, Users, Search } from 'lucide-react'
 
 const API_URL = 'http://localhost:8000'
 
 function Analytics() {
+  const { district, state } = useDistrict()
   const [stats, setStats] = useState(null)
   const [villages, setVillages] = useState([])
   const [assignments, setAssignments] = useState([])
@@ -15,13 +17,14 @@ function Analytics() {
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [district])
 
   const fetchData = async () => {
     try {
+      const params = district ? `?district=${district}` : ''
       const [statsRes, villagesRes, assignmentsRes] = await Promise.all([
-        axios.get(`${API_URL}/villages/stats`),
-        axios.get(`${API_URL}/villages/`),
+        axios.get(`${API_URL}/villages/stats${params}`),
+        axios.get(`${API_URL}/villages/${params}`),
         axios.get(`${API_URL}/tankers/assignments/all`)
       ])
       
@@ -132,8 +135,13 @@ function Analytics() {
     <div className="min-h-screen bg-gray-50 pb-20">
       <div className="bg-purple-900 text-white p-6 shadow-lg">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">📊 Analytics Dashboard</h1>
-          <p className="text-purple-200">Comprehensive drought monitoring and tanker operations analysis</p>
+          <h1 className="text-3xl font-bold mb-2">
+            📊 Analytics Dashboard {district && `- ${district} District`}
+          </h1>
+          <p className="text-purple-200">
+            Comprehensive drought monitoring and tanker operations analysis
+            {district && state && ` for ${district}, ${state}`}
+          </p>
         </div>
       </div>
 
