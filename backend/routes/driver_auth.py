@@ -5,8 +5,13 @@ from models import Driver, DriverOTP, DriverSession, TankerAssignment, Tanker, V
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 from typing import Optional
-import random
 import string
+from otp_service import generate_otp, send_otp_sms, validate_phone_number
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+DEMO_MODE = os.getenv("DEMO_MODE", "true").lower() == "true"
 
 router = APIRouter(prefix="/driver", tags=["Driver Auth"])
 
@@ -43,7 +48,14 @@ def get_driver_from_token(token: str, db: Session):
 
 @router.post("/send-otp")
 def send_otp(request: SendOTPRequest, db: Session = Depends(get_db)):
-    """Send OTP to driver's phone"""
+    """Send OTP to driver's phone via Twilio SMS"""
+    # Validate phone number format
+    if not validate_phone_number(request.phone):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid phone number. Must be 10 digits starting with 6-9"
+        )
+    
     # Check if driver exists
     driver = db.query(Driver).filter(Driver.phone == request.phone).first()
     
@@ -53,8 +65,11 @@ def send_otp(request: SendOTPRequest, db: Session = Depends(get_db)):
             detail="Driver not registered. Contact your district office."
         )
     
-    # Generate 4-digit OTP
-    otp = str(random.randint(1000, 9999))
+    # Generate OTP
+    otp = generate_otp()
+    
+    # Send OTP via Twilio
+    sms_result = send_otp_sms(request.phone, otp, driver.name)
     
     # Save OTP to database
     driver_otp = DriverOTP(
@@ -66,19 +81,19 @@ def send_otp(request: SendOTPRequest, db: Session = Depends(get_db)):
     db.add(driver_otp)
     db.commit()
     
-    # Print OTP to console for demo
-    print(f"\n{'='*50}")
-    print(f"🔐 OTP for {request.phone}: {otp}")
-    print(f"Driver: {driver.name}")
-    print(f"Expires in: 10 minutes")
-    print(f"{'='*50}\n")
-    
-    return {
-        "message": "OTP sent successfully",
-        "otp": otp,  # Remove in production
+    response = {
+        "message": sms_result.get("message", "OTP sent successfully"),
         "expires_in": "10 minutes",
-        "driver_name": driver.name
+        "driver_name": driver.name,
+        "mode": sms_result.get("mode", "unknown")
     }
+    
+    # Only include OTP in response if DEMO_MODE is enabled
+    if DEMO_MODE or sms_result.get("mode") == "fallback":
+        response["demo_otp"] = otp
+        response["demo_note"] = "OTP shown for demo/testing only"
+    
+    return response
 
 @router.post("/verify-otp")
 def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):

@@ -1,6 +1,19 @@
 import axios from 'axios'
 
-const BASE_URL = 'http://localhost:8000'
+const getBaseURL = () => {
+  // Check if running in Android (Capacitor)
+  if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+    // IMPORTANT: Change this to YOUR computer's local IP
+    // Run: py backend/find_ip.py to get your IP
+    // Example: return "http://192.168.1.100:8000"
+    return "http://192.168.1.5:8000"  // ⚠️ UPDATE THIS WITH YOUR IP
+  }
+  
+  // Running in browser
+  return "http://localhost:8000"
+}
+
+const BASE_URL = getBaseURL()
 
 const getToken = () => localStorage.getItem('driver_token')
 
@@ -31,3 +44,7 @@ export const api = {
       headers: { Authorization: `Bearer ${getToken()}` }
     })
 }
+
+// Export BASE_URL for debugging
+export { BASE_URL }
+
