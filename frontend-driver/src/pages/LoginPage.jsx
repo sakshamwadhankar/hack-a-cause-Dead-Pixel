@@ -39,7 +39,8 @@ function LoginPage({ onLogin }) {
 
     try {
       const response = await api.sendOTP(phone)
-      setDemoOTP(response.data.otp)
+      // Always show OTP for demo purposes
+      setDemoOTP(response.data.demo_otp || response.data.otp || response.data.fallback_otp)
       setDriverName(response.data.driver_name)
       setStep('otp')
       setTimeout(() => otpRefs[0].current?.focus(), 100)

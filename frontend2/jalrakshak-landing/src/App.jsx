@@ -5,6 +5,8 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [scrollProgress, setScrollProgress] = useState(0)
   const [visibleSections, setVisibleSections] = useState(new Set())
+  const [iframeLoading, setIframeLoading] = useState(false)
+  const [activeApp, setActiveApp] = useState(null)
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 4000)
@@ -43,6 +45,20 @@ function App() {
     }, 2500)
     return () => clearInterval(interval)
   }, [])
+
+  const handleAppNavigation = (appName, url) => {
+    setActiveApp(appName)
+    setIframeLoading(true)
+    const appSection = document.getElementById('app-section')
+    if (appSection) {
+      appSection.scrollIntoView({ behavior: 'smooth' })
+    }
+    // Update iframe src
+    const iframe = document.getElementById('jalrakshak-frame')
+    if (iframe) {
+      iframe.src = url
+    }
+  }
 
   return (
     <div className="app">
