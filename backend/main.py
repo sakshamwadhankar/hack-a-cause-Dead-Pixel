@@ -1,11 +1,28 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from database import engine, Base
+from database import engine, Base, SessionLocal
 from routes import villages, tankers, alerts
+from models import Village
 
 Base.metadata.create_all(bind=engine)
 
+def init_db():
+    db = SessionLocal()
+    try:
+        village_count = db.query(Village).count()
+        if village_count == 0:
+            print("Database is empty. Running seed data...")
+            from seed_data import seed_database
+            seed_database()
+            print("Database seeded successfully!")
+    finally:
+        db.close()
+
 app = FastAPI(title="JalRakshak API", version="1.0.0")
+
+@app.on_event("startup")
+def startup_event():
+    init_db()
 
 app.add_middleware(
     CORSMiddleware,

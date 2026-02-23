@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey, Date
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database import Base
@@ -8,12 +8,19 @@ class Village(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
+    district = Column(String)
+    population = Column(Integer)
     latitude = Column(Float)
     longitude = Column(Float)
-    population = Column(Integer)
-    water_level = Column(Float)
-    drought_risk = Column(String)
-    last_rainfall = Column(Float)
+    rainfall_current = Column(Float)
+    rainfall_normal = Column(Float)
+    groundwater_current = Column(Float)
+    groundwater_last_year = Column(Float)
+    water_stress_index = Column(Float)
+    stress_level = Column(String)
+    last_tanker_date = Column(Date, nullable=True)
+    days_without_water = Column(Integer)
+    created_at = Column(DateTime, default=datetime.utcnow)
     tanker_requests = relationship("TankerRequest", back_populates="village")
 
 class Tanker(Base):
