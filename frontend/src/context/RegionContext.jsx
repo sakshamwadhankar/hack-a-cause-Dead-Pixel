@@ -6,42 +6,75 @@ const API_URL = 'http://localhost:8000'
 const RegionContext = createContext()
 
 export function RegionProvider({ children }) {
-  const [selectedRegion, setSelectedRegion] = useState(() => {
-    return localStorage.getItem('selectedRegion') || 'marathwada'
+  const [selectedState, setSelectedState] = useState(() => {
+    return localStorage.getItem('selectedState') || 'Maharashtra'
   })
-  const [regions, setRegions] = useState([])
-  const [regionData, setRegionData] = useState(null)
+  const [selectedDistrict, setSelectedDistrict] = useState(() => {
+    return localStorage.getItem('selectedDistrict') || 'Nagpur'
+  })
+  const [allStates, setAllStates] = useState([])
+  const [districtData, setDistrictData] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchRegions()
+    fetchAllDistricts()
   }, [])
 
   useEffect(() => {
-    if (regions.length > 0) {
-      const region = regions.find(r => r.id === selectedRegion)
-      setRegionData(region)
+    if (allStates.length > 0 && selectedState && selectedDistrict) {
+      const state = allStates.find(s => s.name === selectedState)
+      if (state) {
+        const district = state.districts.find(d => d.name === selectedDistrict)
+        if (district) {
+          setDistrictData(district)
+        }
+      }
     }
-  }, [selectedRegion, regions])
+  }, [selectedState, selectedDistrict, allStates])
 
-  const fetchRegions = async () => {
+  const fetchAllDistricts = async () => {
     try {
-      const response = await axios.get(`${API_URL}/villages/regions`)
-      setRegions(response.data)
+      const response = await axios.get(`${API_URL}/villages/districts/all`)
+      setAllStates(response.data.states)
       setLoading(false)
     } catch (error) {
-      console.error('Error fetching regions:', error)
+      console.error('Error fetching districts:', error)
       setLoading(false)
     }
   }
 
-  const setRegion = (regionId) => {
-    setSelectedRegion(regionId)
-    localStorage.setItem('selectedRegion', regionId)
+  const setRegion = (state, district) => {
+    setSelectedState(state)
+    setSelectedDistrict(district)
+    localStorage.setItem('selectedState', state)
+    localStorage.setItem('selectedDistrict', district)
+  }
+
+  const loadDistrictData = async () => {
+    try {
+      const response = await axios.post(`${API_URL}/villages/districts/load`, {
+        state: selectedState,
+        district: selectedDistrict
+      })
+      // Refresh districts to update village counts
+      await fetchAllDistricts()
+      return response.data
+    } catch (error) {
+      console.error('Error loading district data:', error)
+      throw error
+    }
   }
 
   return (
-    <RegionContext.Provider value={{ selectedRegion, regionData, regions, setRegion, loading }}>
+    <RegionContext.Provider value={{ 
+      selectedState, 
+      selectedDistrict, 
+      districtData,
+      allStates, 
+      setRegion, 
+      loadDistrictData,
+      loading 
+    }}>
       {children}
     </RegionContext.Provider>
   )

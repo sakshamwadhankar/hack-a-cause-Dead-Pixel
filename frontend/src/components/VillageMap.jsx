@@ -1,10 +1,26 @@
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet'
+import { useEffect } from 'react'
 import axios from 'axios'
 import 'leaflet/dist/leaflet.css'
 
 const API_URL = 'http://localhost:8000'
 
-function VillageMap({ villages, tankers, assignments, onRefresh, showToast }) {
+function MapUpdater({ center, zoom }) {
+  const map = useMap()
+  
+  useEffect(() => {
+    if (center && center[0] && center[1]) {
+      map.flyTo(center, zoom || 10, {
+        animate: true,
+        duration: 1.5
+      })
+    }
+  }, [center, zoom, map])
+  
+  return null
+}
+
+function VillageMap({ villages, tankers, assignments, center, zoom, onRefresh, showToast }) {
   const getMarkerColor = (stressLevel) => {
     switch (stressLevel) {
       case 'critical': return '#ef4444'
@@ -60,11 +76,12 @@ function VillageMap({ villages, tankers, assignments, onRefresh, showToast }) {
   return (
     <div className="relative h-full w-full">
       <MapContainer 
-        center={[18.0, 76.5]} 
-        zoom={8} 
+        center={center || [18.0, 76.5]} 
+        zoom={zoom || 8} 
         style={{ height: '100%', width: '100%' }}
         className="z-0"
       >
+        <MapUpdater center={center} zoom={zoom} />
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

@@ -206,3 +206,109 @@ def get_village_alerts(village_id: int, db: Session = Depends(get_db)):
         Alert.is_active == True
     ).all()
     return alerts
+
+
+@router.get("/districts/all")
+def get_all_districts(db: Session = Depends(get_db)):
+    """Get all Indian states and districts with village counts"""
+    from real_data_fetcher import get_all_india_districts
+    
+    india_data = get_all_india_districts()
+    states = []
+    
+    for state_name, districts in india_data.items():
+        district_list = []
+        for district_name, district_info in districts.items():
+            # Count villages in this district
+            village_count = db.query(Village).filter(
+                Village.district == district_name,
+                Village.region == state_name
+            ).count()
+            
+            district_list.append({
+                "name": district_name,
+                "lat": district_info["lat"],
+                "lng": district_info["lng"],
+                "normal_rainfall": district_info["normal_mm"],
+                "village_count": village_count
+            })
+        
+        states.append({
+            "name": state_name,
+            "districts": district_list
+        })
+    
+    return {"states": states}
+
+class LoadDistrictRequest(BaseModel):
+    state: str
+    district: str
+
+@router.post("/districts/load")
+def load_district_data(request: LoadDistrictRequest, db: Session = Depends(get_db)):
+    """Load or generate village data for a district"""
+    from real_data_fetcher import generate_villages_for_district
+    
+    # Check if villages already exist
+    existing_villages = db.query(Village).filter(
+        Village.district == request.district,
+        Village.region == request.state
+    ).all()
+    
+    if existing_villages:
+        # Return existing villages
+        for village in existing_villages:
+            wsi, stress_level = calculate_wsi(village)
+            village.water_stress_index = wsi
+            village.stress_level = stress_level
+        db.commit()
+        
+        return {
+            "message": f"Loaded existing data for {request.district}, {request.state}",
+            "villages": existing_villages,
+            "generated": False
+        }
+    
+    # Generate new villages
+    village_data_list = generate_villages_for_district(request.state, request.district, count=5)
+    
+    if not village_data_list:
+        raise HTTPException(status_code=404, detail="District not found in database")
+    
+    new_villages = []
+    for v_data in village_data_list:
+        village = Village(
+            name=v_data["name"],
+            district=v_data["district"],
+            region=v_data["state"],
+            latitude=v_data["latitude"],
+            longitude=v_data["longitude"],
+            population=v_data["population"],
+            rainfall_current=v_data["rainfall_current"],
+            rainfall_normal=v_data["rainfall_normal"],
+            groundwater_current=v_data["groundwater_current"],
+            groundwater_last_year=v_data["groundwater_last_year"],
+            days_without_water=v_data["days_without_water"],
+            water_stress_index=0.0,
+            stress_level="safe"
+        )
+        
+        # Calculate WSI
+        wsi, stress_level = calculate_wsi(village)
+        village.water_stress_index = wsi
+        village.stress_level = stress_level
+        
+        db.add(village)
+        new_villages.append(village)
+    
+    db.commit()
+    
+    # Refresh to get IDs
+    for village in new_villages:
+        db.refresh(village)
+    
+    return {
+        "message": f"Generated {len(new_villages)} villages for {request.district}, {request.state}",
+        "villages": new_villages,
+        "generated": True
+    }

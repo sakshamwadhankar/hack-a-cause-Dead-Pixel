@@ -11,7 +11,7 @@ import { AlertTriangle, Droplets, Truck, MapPin, TrendingUp, ChevronDown } from 
 const API_URL = 'http://localhost:8000'
 
 function Dashboard() {
-  const { selectedRegion, regionData, regions, setRegion } = useRegion()
+  const { selectedState, selectedDistrict, districtData, allStates, setRegion, loadDistrictData } = useRegion()
   const [stats, setStats] = useState(null)
   const [villages, setVillages] = useState([])
   const [tankers, setTankers] = useState([])
@@ -20,17 +20,19 @@ function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [toast, setToast] = useState(null)
-  const [showRegionDropdown, setShowRegionDropdown] = useState(false)
+  const [showStateDropdown, setShowStateDropdown] = useState(false)
+  const [showDistrictDropdown, setShowDistrictDropdown] = useState(false)
+  const [needsDataLoad, setNeedsDataLoad] = useState(false)
 
   useEffect(() => {
-    if (selectedRegion) {
+    if (selectedDistrict && districtData) {
       fetchData()
     }
-  }, [selectedRegion])
+  }, [selectedState, selectedDistrict])
 
   useEffect(() => {
     const dataInterval = setInterval(() => {
-      if (selectedRegion) fetchData()
+      if (selectedDistrict && districtData && !needsDataLoad) fetchData()
     }, 30000)
     const timeInterval = setInterval(() => setCurrentTime(new Date()), 1000)
     
@@ -38,21 +40,44 @@ function Dashboard() {
       clearInterval(dataInterval)
       clearInterval(timeInterval)
     }
-  }, [selectedRegion])
+  }, [selectedDistrict, districtData, needsDataLoad])
 
   const fetchData = async () => {
     try {
-      const [statsRes, villagesRes, tankersRes, alertsRes, assignmentsRes] = await Promise.all([
-        axios.get(`${API_URL}/villages/stats?region=${selectedRegion}`),
-        axios.get(`${API_URL}/villages/?region=${selectedRegion}`),
+      const [villagesRes, tankersRes, alertsRes, assignmentsRes] = await Promise.all([
+        axios.get(`${API_URL}/villages/?region=${selectedState}`),
         axios.get(`${API_URL}/tankers/`),
         axios.get(`${API_URL}/alerts/`),
         axios.get(`${API_URL}/tankers/assignments/active`)
       ])
       
-      setStats(statsRes.data)
-      setVillages(villagesRes.data)
-      setTankers(tankersRes.data.filter(t => t.region === selectedRegion))
+      // Filter villages by district
+      const districtVillages = villagesRes.data.filter(v => v.district === selectedDistrict)
+      
+      if (districtVillages.length === 0) {
+        setNeedsDataLoad(true)
+        setStats({ total_villages: 0, critical_count: 0, high_count: 0, moderate_count: 0, safe_count: 0, avg_wsi: 0 })
+      } else {
+        setNeedsDataLoad(false)
+        // Calculate stats for this district
+        const critical_count = districtVillages.filter(v => v.stress_level === 'critical').length
+        const high_count = districtVillages.filter(v => v.stress_level === 'high').length
+        const moderate_count = districtVillages.filter(v => v.stress_level === 'moderate').length
+        const safe_count = districtVillages.filter(v => v.stress_level === 'safe').length
+        const avg_wsi = districtVillages.reduce((sum, v) => sum + v.water_stress_index, 0) / districtVillages.length
+        
+        setStats({
+          total_villages: districtVillages.length,
+          critical_count,
+          high_count,
+          moderate_count,
+          safe_count,
+          avg_wsi: avg_wsi.toFixed(2)
+        })
+      }
+      
+      setVillages(districtVillages)
+      setTankers(tankersRes.data.filter(t => t.region === selectedState))
       setAlerts(alertsRes.data)
       setAssignments(assignmentsRes.data)
       setLoading(false)
@@ -60,6 +85,18 @@ function Dashboard() {
       console.error('Error fetching data:', error)
       showToast('Error loading data', 'error')
       setLoading(false)
+    }
+  }
+
+  const handleLoadDistrictData = async () => {
+    try {
+      showToast('Generating village data...', 'info')
+      const result = await loadDistrictData()
+      showToast(result.message, 'success')
+      setNeedsDataLoad(false)
+      fetchData()
+    } catch (error) {
+      showToast('Error loading district data', 'error')
     }
   }
 
@@ -82,7 +119,9 @@ function Dashboard() {
 
   const tankersActive = tankers.filter(t => t.status === 'dispatched').length
 
-  if (loading || !regionData) {
+  const currentStateDistricts = allStates.find(s => s.name === selectedState)?.districts || []
+
+  if (loading || !districtData) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
         <div className="text-center">
@@ -103,36 +142,82 @@ function Dashboard() {
               <h1 className="text-2xl font-bold">JalRakshak</h1>
             </div>
             
-            <div className="relative">
-              <button
-                onClick={() => setShowRegionDropdown(!showRegionDropdown)}
-                className="flex items-center space-x-2 bg-blue-800 hover:bg-blue-700 px-4 py-2 rounded-lg transition"
-              >
-                <span className="font-semibold">🗺️ {regionData.name}</span>
-                <ChevronDown size={20} />
-              </button>
-              
-              {showRegionDropdown && (
-                <div className="absolute top-full mt-2 right-0 bg-white text-gray-800 rounded-lg shadow-xl min-w-[250px] z-50">
-                  {regions.map(region => (
-                    <button
-                      key={region.id}
-                      onClick={() => {
-                        setRegion(region.id)
-                        setShowRegionDropdown(false)
-                      }}
-                      className={`w-full text-left px-4 py-3 hover:bg-blue-50 transition first:rounded-t-lg last:rounded-b-lg ${
-                        selectedRegion === region.id ? 'bg-blue-100 font-semibold' : ''
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>{region.name}</span>
-                        <span className="text-sm text-gray-500">{region.village_count} villages</span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
+            <div className="flex items-center space-x-4">
+              {/* State Selector */}
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setShowStateDropdown(!showStateDropdown)
+                    setShowDistrictDropdown(false)
+                  }}
+                  className="flex items-center space-x-2 bg-blue-800 hover:bg-blue-700 px-4 py-2 rounded-lg transition"
+                >
+                  <span className="font-semibold">🇮🇳 {selectedState}</span>
+                  <ChevronDown size={20} />
+                </button>
+                
+                {showStateDropdown && (
+                  <div className="absolute top-full mt-2 right-0 bg-white text-gray-800 rounded-lg shadow-xl min-w-[250px] max-h-[400px] overflow-y-auto z-50">
+                    {allStates.map(state => (
+                      <button
+                        key={state.name}
+                        onClick={() => {
+                          setRegion(state.name, state.districts[0]?.name || '')
+                          setShowStateDropdown(false)
+                        }}
+                        className={`w-full text-left px-4 py-3 hover:bg-blue-50 transition ${
+                          selectedState === state.name ? 'bg-blue-100 font-semibold' : ''
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span>{state.name}</span>
+                          <span className="text-sm text-gray-500">{state.districts.length} districts</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* District Selector */}
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setShowDistrictDropdown(!showDistrictDropdown)
+                    setShowStateDropdown(false)
+                  }}
+                  className="flex items-center space-x-2 bg-blue-800 hover:bg-blue-700 px-4 py-2 rounded-lg transition"
+                >
+                  <span className="font-semibold">📍 {selectedDistrict}</span>
+                  <ChevronDown size={20} />
+                </button>
+                
+                {showDistrictDropdown && (
+                  <div className="absolute top-full mt-2 right-0 bg-white text-gray-800 rounded-lg shadow-xl min-w-[280px] max-h-[400px] overflow-y-auto z-50">
+                    {currentStateDistricts.map(district => (
+                      <button
+                        key={district.name}
+                        onClick={() => {
+                          setRegion(selectedState, district.name)
+                          setShowDistrictDropdown(false)
+                        }}
+                        className={`w-full text-left px-4 py-3 hover:bg-blue-50 transition ${
+                          selectedDistrict === district.name ? 'bg-blue-100 font-semibold' : ''
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium">{district.name}</div>
+                            <div className="text-xs text-gray-500">
+                              {district.normal_rainfall}mm rainfall • {district.village_count} villages
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="text-right">
@@ -143,7 +228,7 @@ function Dashboard() {
         </div>
         <div className="bg-blue-800 px-6 py-2">
           <p className="text-sm text-blue-100 text-center">
-            🌍 {regionData.name} | {regionData.districts.join(' • ')}
+            🌍 {selectedDistrict} District, {selectedState} | {districtData?.normal_rainfall}mm Normal Rainfall
           </p>
         </div>
       </nav>
@@ -187,13 +272,37 @@ function Dashboard() {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-lg p-4">
               <h3 className="text-xl font-semibold mb-4 text-gray-800">
-                {regionData.name} - Village Water Stress Map
+                {selectedDistrict} District - Village Water Stress Map
               </h3>
-              <div className="h-[600px] rounded-lg overflow-hidden border-2 border-gray-200">
+              <div className="h-[600px] rounded-lg overflow-hidden border-2 border-gray-200 relative">
+                {needsDataLoad ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
+                    <div className="text-center p-8 bg-white rounded-lg shadow-lg max-w-md">
+                      <MapPin size={64} className="mx-auto text-blue-600 mb-4" />
+                      <h4 className="text-2xl font-bold text-gray-800 mb-2">
+                        📍 {selectedDistrict} District Selected
+                      </h4>
+                      <p className="text-gray-600 mb-4">
+                        No village data loaded yet for this district.
+                      </p>
+                      <button
+                        onClick={handleLoadDistrictData}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition"
+                      >
+                        Load District Data
+                      </button>
+                      <p className="text-sm text-gray-500 mt-3">
+                        This will generate 5 sample villages with real IMD rainfall data
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
                 <VillageMap 
                   villages={villages} 
                   tankers={tankers}
                   assignments={assignments}
+                  center={districtData ? [districtData.lat, districtData.lng] : null}
+                  zoom={10}
                   onRefresh={fetchData}
                   showToast={showToast}
                 />
