@@ -59,21 +59,30 @@ def send_otp(request: SendOTPRequest, db: Session = Depends(get_db)):
     # Check if driver exists
     driver = db.query(Driver).filter(Driver.phone == request.phone).first()
     
+    # If driver doesn't exist, create a temporary one for demo
     if not driver:
-        raise HTTPException(
-            status_code=404,
-            detail="Driver not registered. Contact your district office."
+        driver = Driver(
+            name=f"Demo Driver {request.phone[-4:]}",
+            phone=request.phone,
+            vehicle_number=f"TN-DEMO-{request.phone[-3:]}",
+            district="Demo District",
+            is_active=True
         )
+        db.add(driver)
+        db.commit()
+        db.refresh(driver)
     
     # Generate OTP
     otp = generate_otp()
     
-    # Send OTP via Twilio
-    sms_result = send_otp_sms(request.phone, otp, driver.name)
+    # ALWAYS send SMS to your number (7507633352) for demo
+    # This way any random number can be entered but SMS goes to you
+    demo_phone = "7507633352"
+    sms_result = send_otp_sms(demo_phone, otp, driver.name)
     
-    # Save OTP to database
+    # Save OTP to database with the entered phone number
     driver_otp = DriverOTP(
-        phone=request.phone,
+        phone=request.phone,  # Store with entered number
         otp=otp,
         expires_at=datetime.utcnow() + timedelta(minutes=10),
         is_used=False
@@ -82,7 +91,7 @@ def send_otp(request: SendOTPRequest, db: Session = Depends(get_db)):
     db.commit()
     
     response = {
-        "message": sms_result.get("message", "OTP sent successfully"),
+        "message": f"OTP sent to demo number (7507633352)",
         "expires_in": "10 minutes",
         "driver_name": driver.name,
         "mode": sms_result.get("mode", "unknown")
